@@ -8,6 +8,6 @@
         /// <summary>
         ///     Gets or sets a value indicating whether the plugin is enabled or not.
         /// </summary>
-        public bool Enable { get; set; } = true;
+        public bool Enable { get; set; } = false;
     }
 }
