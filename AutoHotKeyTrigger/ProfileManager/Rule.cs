@@ -141,12 +141,31 @@ namespace AutoHotKeyTrigger.ProfileManager
             }
             else
             {
-                // Draw single key settings (legacy)
-                var tmpKey = this.Key;
-                if (ImGuiHelper.NonContinuousEnumComboBox("Key", ref tmpKey))
+                // Draw single key settings using the new keybind system
+                ImGui.Text("Single Key Action:");
+                
+                // Create a temporary KeyAction for the single key mode
+                var tempAction = new KeyAction
                 {
-                    this.Key = tmpKey;
+                    Key = this.Key,
+                    UseCtrl = false,
+                    UseAlt = false,
+                    UseShift = false,
+                    UseWin = false,
+                    DelayMs = 0
+                };
+                
+                if (KeybindCapture.DrawKeybindCapture(-1, tempAction, $"Set Key: {tempAction.GetDisplayString()}"))
+                {
+                    // Update the single key from the keybind capture
+                    this.Key = tempAction.Key;
+                    
+                    // For single key mode, we ignore modifiers for now to maintain compatibility
+                    // Could be enhanced later to support modifiers in single key mode too
                 }
+                
+                ImGui.TextColored(new System.Numerics.Vector4(0.7f, 1.0f, 0.7f, 1.0f), 
+                    $"Current key: {this.Key.ToString().Replace("KEY_", "")}");
             }
 
             this.DrawCooldownWidget();

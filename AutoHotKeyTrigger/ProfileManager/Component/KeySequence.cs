@@ -160,17 +160,29 @@ namespace AutoHotKeyTrigger.ProfileManager.Component
                         logger($"Finished waiting {action.DelayMs}ms, now pressing {action.Key}");
                     }
 
-                    // Press the key
-                    logger($"Attempting to press {action.Key}...");
-                    bool keyPressed = MiscHelper.KeyUp(action.Key);
+                    // Press the key (or key combination)
+                    logger($"Attempting to press {action.GetDisplayString()}...");
+                    
+                    // Log the details of what we're about to do
+                    if (action.UseCtrl || action.UseAlt || action.UseShift || action.UseWin)
+                    {
+                        var modifiers = new List<string>();
+                        if (action.UseCtrl) modifiers.Add("CTRL");
+                        if (action.UseAlt) modifiers.Add("ALT");
+                        if (action.UseShift) modifiers.Add("SHIFT");
+                        if (action.UseWin) modifiers.Add("WIN");
+                        logger($"Using modifiers: {string.Join("+", modifiers)} with key {action.Key}");
+                    }
+                    
+                    bool keyPressed = action.Execute();
                     
                     if (keyPressed)
                     {
-                        logger($"SUCCESS: Pressed {action.Key} (action {i + 1}/{actions.Count})");
+                        logger($"SUCCESS: Pressed {action.GetDisplayString()} (action {i + 1}/{actions.Count})");
                     }
                     else
                     {
-                        logger($"FAILED: Could not press {action.Key} (action {i + 1}/{actions.Count})");
+                        logger($"FAILED: Could not press {action.GetDisplayString()} (action {i + 1}/{actions.Count})");
                     }
                     
                     // Small delay between keys to ensure they register properly
@@ -241,7 +253,6 @@ namespace AutoHotKeyTrigger.ProfileManager.Component
                 ImGui.PushID(i);
                 
                 var action = actions[i];
-                var key = action.Key;
                 var delay = action.DelayMs;
 
                 ImGui.Text($"Action {i + 1}:");
@@ -254,27 +265,24 @@ namespace AutoHotKeyTrigger.ProfileManager.Component
                     break;
                 }
 
-                // Key selection
-                ImGui.SetNextItemWidth(120);
-                if (ImGuiHelper.NonContinuousEnumComboBox($"##key{i}", ref key))
-                {
-                    action.Key = key;
-                }
+                // Use the new keybind capture system
+                KeybindCapture.DrawKeybindCapture(i, action);
 
-                ImGui.SameLine();
+                // Delay input
                 ImGui.Text("Delay:");
                 ImGui.SameLine();
-                
-                // Delay input
                 ImGui.SetNextItemWidth(80);
                 if (ImGui.InputInt($"##delay{i}", ref delay, 50, 100))
                 {
-                    action.DelayMs = Math.Max(0, delay); // Ensure non-negative delay
+                    action.DelayMs = Math.Max(0, delay);
                 }
-                
                 ImGui.SameLine();
                 ImGui.Text("ms");
 
+                // Show preview
+                ImGui.TextColored(new System.Numerics.Vector4(0.7f, 1.0f, 0.7f, 1.0f), $"→ {action.GetDisplayString()}");
+
+                ImGui.Separator();
                 ImGui.PopID();
             }
 
@@ -297,11 +305,12 @@ namespace AutoHotKeyTrigger.ProfileManager.Component
 
             var summary = string.Join(" → ", actions.Select(a => 
             {
+                var keyStr = a.GetDisplayString();
                 if (a.DelayMs > 0)
                 {
-                    return $"{a.Key}({a.DelayMs}ms)";
+                    return $"{keyStr}({a.DelayMs}ms)";
                 }
-                return a.Key.ToString();
+                return keyStr;
             }));
 
             return summary;
