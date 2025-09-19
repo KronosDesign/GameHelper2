@@ -50,6 +50,18 @@ namespace AutoHotKeyTrigger.ProfileManager
         public VK Key;
 
         /// <summary>
+        ///     Whether to use key sequence instead of single key
+        /// </summary>
+        [JsonProperty]
+        public bool UseKeySequence;
+
+        /// <summary>
+        ///     Key sequence to execute when conditions are met
+        /// </summary>
+        [JsonProperty]
+        public KeySequence KeySequence;
+
+        /// <summary>
         ///     Initializes a new instance of the <see cref="Rule" /> class.
         /// </summary>
         /// <param name="name"></param>
@@ -57,6 +69,8 @@ namespace AutoHotKeyTrigger.ProfileManager
         public Rule(string name)
         {
             this.Name = name;
+            this.UseKeySequence = false;
+            this.KeySequence = new KeySequence();
         }
 
         /// <summary>
@@ -69,6 +83,8 @@ namespace AutoHotKeyTrigger.ProfileManager
             this.Enabled = false;
             this.Name = $"{other.Name}1";
             this.Key = other.Key;
+            this.UseKeySequence = other.UseKeySequence;
+            this.KeySequence = new KeySequence(other.KeySequence);
             this.conditions = new();
             foreach (var condition in other.conditions)
             {
@@ -86,11 +102,13 @@ namespace AutoHotKeyTrigger.ProfileManager
             rules[0] = new("LifeFlask");
             rules[0].Enabled = true;
             rules[0].Key = VK.KEY_1;
+            rules[0].UseKeySequence = false;
             rules[0].conditions.Add(new DynamicCondition($"PlayerVitals.HP.Percent <= 80 && Flasks.Flask1.IsUsable && !Flasks.Flask1.Active"));
 
             rules[1] = new($"ManaFlask");
             rules[1].Enabled = true;
             rules[1].Key = VK.KEY_2;
+            rules[1].UseKeySequence = false;
             rules[1].conditions.Add(new DynamicCondition($"PlayerVitals.MANA.Percent <= 30 && Flasks.Flask2.IsUsable && !Flasks.Flask2.Active"));
 
             return rules;
@@ -111,10 +129,24 @@ namespace AutoHotKeyTrigger.ProfileManager
         {
             ImGui.Checkbox("Enable", ref this.Enabled);
             ImGui.InputText("Name", ref this.Name, 100);
-            var tmpKey = this.Key;
-            if (ImGuiHelper.NonContinuousEnumComboBox("Key", ref tmpKey))
+            
+            // Key mode selection
+            ImGui.Checkbox("Use Key Sequence (Combo)", ref this.UseKeySequence);
+            ImGuiHelper.ToolTip("Enable this to use a sequence of keys with delays instead of a single key");
+
+            if (this.UseKeySequence)
             {
-                this.Key = tmpKey;
+                // Draw key sequence settings
+                this.KeySequence.DrawSettings();
+            }
+            else
+            {
+                // Draw single key settings (legacy)
+                var tmpKey = this.Key;
+                if (ImGuiHelper.NonContinuousEnumComboBox("Key", ref tmpKey))
+                {
+                    this.Key = tmpKey;
+                }
             }
 
             this.DrawCooldownWidget();
@@ -130,10 +162,29 @@ namespace AutoHotKeyTrigger.ProfileManager
         {
             if (this.Enabled && this.Evaluate())
             {
-                if (MiscHelper.KeyUp(this.Key))
+                if (this.UseKeySequence && this.KeySequence.HasActions)
                 {
-                    logger($"{this.Key} is pressed.");
-                    this.cooldownStopwatch.Restart();
+                    // Execute key sequence 
+                    if (!this.KeySequence.IsExecuting)
+                    {
+                        logger($"Executing key sequence: {this.KeySequence.GetSummary()}");
+                        // Execute in a separate task to not block the main thread
+                        System.Threading.Tasks.Task.Run(() => this.KeySequence.Execute(logger));
+                        this.cooldownStopwatch.Restart();
+                    }
+                    else
+                    {
+                        logger("Key sequence is already executing, skipping...");
+                    }
+                }
+                else
+                {
+                    // Execute single key (legacy behavior)
+                    if (MiscHelper.KeyUp(this.Key))
+                    {
+                        logger($"{this.Key} is pressed.");
+                        this.cooldownStopwatch.Restart();
+                    }
                 }
             }
         }
