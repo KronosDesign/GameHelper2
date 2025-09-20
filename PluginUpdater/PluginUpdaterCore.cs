@@ -7,11 +7,41 @@ using GameHelper.Plugin;
 
 namespace PluginUpdater
 {
-    public class PluginUpdaterCore : PCore<PluginUpdaterSettings>
+    public sealed class PluginUpdaterCore : PCore<PluginUpdaterSettings>
     {
         private PluginRenderer _pluginRenderer;
         
         public static PluginUpdaterCore Instance { get; private set; }
+
+        static PluginUpdaterCore()
+        {
+            // Setup assembly resolver for LibGit2Sharp
+            AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
+        }
+
+        private static Assembly OnAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            if (args.Name.StartsWith("LibGit2Sharp"))
+            {
+                var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var gameHelperDir = assemblyDir?.Replace("\\Plugins\\PluginUpdater", "");
+                var libGit2Path = Path.Combine(gameHelperDir ?? "", "LibGit2Sharp.dll");
+                
+                Console.WriteLine($"Assembly resolve request for: {args.Name}");
+                Console.WriteLine($"Looking for LibGit2Sharp at: {libGit2Path}");
+                
+                if (File.Exists(libGit2Path))
+                {
+                    Console.WriteLine($"Loading LibGit2Sharp from: {libGit2Path}");
+                    return Assembly.LoadFrom(libGit2Path);
+                }
+                else
+                {
+                    Console.WriteLine($"LibGit2Sharp.dll not found at: {libGit2Path}");
+                }
+            }
+            return null;
+        }
 
         public override void OnEnable(bool isGameOpened)
         {
@@ -20,13 +50,21 @@ namespace PluginUpdater
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             _pluginRenderer = new PluginRenderer(Settings);
 
+            Console.WriteLine("PluginUpdater started with direct deletion.");
+            
+            // Initialize GitUpdater after assembly resolver is set up
             Task.Run(async () =>
             {
-                _pluginRenderer.Startup();
-                await GitUpdater.Instance.UpdateGitInfoAsync();
+                try
+                {
+                    _pluginRenderer.Startup();
+                    await GitUpdater.Instance.UpdateGitInfoAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error initializing GitUpdater: {ex.Message}");
+                }
             });
-            
-            Console.WriteLine("PluginUpdater started with direct deletion.");
         }
 
         public override void OnDisable()

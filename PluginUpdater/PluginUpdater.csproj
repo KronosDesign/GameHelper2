@@ -19,12 +19,19 @@
       <Private>false</Private>
     </PackageReference>
     <PackageReference Include="LibGit2Sharp" Version="0.30.0">
-      <Private>true</Private>
-      <CopyLocal>true</CopyLocal>
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3">
       <Private>false</Private>
     </PackageReference>
+  </ItemGroup>
+
+  <!-- Include our bundled LibGit2Sharp dependencies -->
+  <ItemGroup>
+    <None Include="NativeDependencies\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -39,14 +46,27 @@
   </ItemGroup>
 
   <Target Name="CopyFiles" AfterTargets="Build">
+    <!-- Copy main plugin files -->
     <Copy SourceFiles="$(OutDir)$(TargetName)$(TargetExt);$(OutDir)$(TargetName).pdb;" DestinationFolder="..\GameHelper\$(OutDir)Plugins\$(ProjectName)" SkipUnchangedFiles="true"/>
-    <!-- Copy LibGit2Sharp native libraries -->
+    
+    <!-- Copy PluginStore.json -->
+    <Copy SourceFiles="PluginStore.json" DestinationFolder="..\GameHelper\$(OutDir)Plugins\$(ProjectName)" SkipUnchangedFiles="true"/>
+    
+    <!-- Copy our bundled LibGit2Sharp dependencies -->
     <ItemGroup>
-      <LibGit2Files Include="$(OutDir)runtimes\**\*.*" />
-      <LibGit2Dlls Include="$(OutDir)LibGit2Sharp.dll" />
+      <LibGit2SharpLib Include="$(OutDir)NativeDependencies\LibGit2Sharp.dll" />
+      <LibGit2SharpNative Include="$(OutDir)NativeDependencies\runtimes\**\*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(LibGit2Dlls)" DestinationFolder="..\GameHelper\$(OutDir)Plugins\$(ProjectName)" SkipUnchangedFiles="true" ContinueOnError="true"/>
-    <Copy SourceFiles="@(LibGit2Files)" DestinationFiles="@(LibGit2Files->'..\GameHelper\$(OutDir)Plugins\$(ProjectName)\runtimes\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true"/>
+    
+    <!-- Copy LibGit2Sharp main library to plugin folder AND GameHelper root -->
+    <Copy SourceFiles="@(LibGit2SharpLib)" DestinationFolder="..\GameHelper\$(OutDir)Plugins\$(ProjectName)" SkipUnchangedFiles="true"/>
+    <Copy SourceFiles="@(LibGit2SharpLib)" DestinationFolder="..\GameHelper\$(OutDir)" SkipUnchangedFiles="true"/>
+    
+    <!-- Copy LibGit2Sharp native binaries to plugin folder -->
+    <Copy SourceFiles="@(LibGit2SharpNative)" DestinationFiles="@(LibGit2SharpNative->'..\GameHelper\$(OutDir)Plugins\$(ProjectName)\runtimes\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true"/>
+    
+    <!-- Copy LibGit2Sharp native binaries to GameHelper root -->
+    <Copy SourceFiles="@(LibGit2SharpNative)" DestinationFiles="@(LibGit2SharpNative->'..\GameHelper\$(OutDir)runtimes\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true"/>
   </Target>
 
 </Project>

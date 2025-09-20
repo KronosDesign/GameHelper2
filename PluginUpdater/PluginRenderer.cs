@@ -9,6 +9,8 @@ namespace PluginUpdater
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using ImGuiNET;
     using GameHelper;
@@ -32,7 +34,7 @@ namespace PluginUpdater
         private bool _isCloning;
         private string _pluginNameFilter = "";
         private string _pluginToDelete = "";
-        private bool _showDeleteConfirmation;
+        private bool _showConfirmDelete;
 
         // Store functionality
         private readonly List<StorePluginInfo> _storePlugins = new();
@@ -157,9 +159,6 @@ namespace PluginUpdater
 
                 ImGui.EndTabBar();
             }
-            
-            // Modal de confirmação de delete
-            RenderDeleteConfirmationModal();
         }
 
         private void RenderSettings()
@@ -219,49 +218,6 @@ namespace PluginUpdater
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetTooltip("Restart the entire application (use only if reload doesn't work)");
-            }
-        }
-
-        private void RenderDeleteConfirmationModal()
-        {
-            if (_showDeleteConfirmation)
-            {
-                // Centralizar o modal na tela
-                var center = ImGui.GetMainViewport().GetCenter();
-                ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new System.Numerics.Vector2(0.5f, 0.5f));
-                
-                ImGui.OpenPopup("Confirm Delete");
-            }
-
-            if (ImGui.BeginPopupModal("Confirm Delete", ref _showDeleteConfirmation, ImGuiWindowFlags.AlwaysAutoResize))
-            {
-                ImGui.TextWrapped($"Are you sure you want to delete the plugin '{_pluginToDelete}'?");
-                ImGui.TextWrapped("This action cannot be undone and will permanently remove all plugin files.");
-                ImGui.Spacing();
-
-                if (ImGui.Button("Yes, Delete"))
-                {
-                    var plugins = _updater?.GetPluginInfo() ?? new List<PluginInfo>();
-                    var pluginToDelete = plugins.FirstOrDefault(p => p.Name.Equals(_pluginToDelete, StringComparison.OrdinalIgnoreCase));
-                    
-                    if (pluginToDelete != null)
-                    {
-                        _ = DeletePluginAsync(pluginToDelete);
-                    }
-                    
-                    _showDeleteConfirmation = false;
-                    _pluginToDelete = "";
-                }
-
-                ImGui.SameLine();
-
-                if (ImGui.Button("Cancel"))
-                {
-                    _showDeleteConfirmation = false;
-                    _pluginToDelete = "";
-                }
-
-                ImGui.EndPopup();
             }
         }
 
@@ -367,7 +323,7 @@ namespace PluginUpdater
             ImGui.TableSetupColumn("Plugin", ImGuiTableColumnFlags.WidthFixed, 150.0f);
             ImGui.TableSetupColumn("Branch", ImGuiTableColumnFlags.WidthFixed, 100.0f);
             ImGui.TableSetupColumn("Commit", ImGuiTableColumnFlags.WidthStretch); // Esta vai ocupar o espaço restante
-            ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 100.0f);
+            ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 150.0f);
         }
 
         private void RenderTableRows()
@@ -479,12 +435,41 @@ namespace PluginUpdater
                 ImGui.SameLine();
             }
             
-            // Botão Delete sempre disponível
+            // Botão Delete com confirmação inline
             ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.8f, 0.2f, 0.2f, 1.0f)); // Vermelho
-            if (ImGui.Button($"Delete##{pluginInfo.Name}"))
+            
+            if (_pluginToDelete == pluginInfo.Name && _showConfirmDelete)
             {
-                _pluginToDelete = pluginInfo.Name;
-                _showDeleteConfirmation = true;
+                // Mostrar confirmação inline
+                if (ImGui.Button($"Yes##confirm{pluginInfo.Name}", new System.Numerics.Vector2(40, 0)))
+                {
+                    var plugins = _updater?.GetPluginInfo() ?? new List<PluginInfo>();
+                    var pluginToDelete = plugins.FirstOrDefault(p => p.Name.Equals(_pluginToDelete, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (pluginToDelete != null)
+                    {
+                        _ = DeletePluginAsync(pluginToDelete);
+                    }
+                    
+                    _showConfirmDelete = false;
+                    _pluginToDelete = "";
+                }
+                ImGui.SameLine();
+                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.5f, 0.5f, 0.5f, 1.0f)); // Cinza
+                if (ImGui.Button($"No##cancel{pluginInfo.Name}", new System.Numerics.Vector2(30, 0)))
+                {
+                    _showConfirmDelete = false;
+                    _pluginToDelete = "";
+                }
+                ImGui.PopStyleColor();
+            }
+            else
+            {
+                if (ImGui.Button($"Delete##{pluginInfo.Name}"))
+                {
+                    _pluginToDelete = pluginInfo.Name;
+                    _showConfirmDelete = true;
+                }
             }
             ImGui.PopStyleColor();
         }
@@ -1193,7 +1178,51 @@ namespace PluginUpdater
         {
             _storePlugins.Clear();
             
-            // Add known repositories
+            try
+            {
+                // Load plugins from JSON file
+                var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var jsonFilePath = Path.Combine(assemblyDir ?? "", "PluginStore.json");
+                
+                if (File.Exists(jsonFilePath))
+                {
+                    var jsonContent = File.ReadAllText(jsonFilePath);
+                    var storeData = JsonSerializer.Deserialize<PluginStoreData>(jsonContent);
+                    
+                    if (storeData?.Plugins != null)
+                    {
+                        foreach (var plugin in storeData.Plugins)
+                        {
+                            _storePlugins.Add(new StorePluginInfo
+                            {
+                                Name = plugin.Name,
+                                RepositoryUrl = plugin.RepositoryUrl,
+                                Description = plugin.Description,
+                                Author = plugin.Author,
+                                Category = plugin.Category
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Plugin store file not found at: {jsonFilePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading plugin store: {ex.Message}");
+                
+                // Fallback to hardcoded plugins if JSON fails
+                LoadFallbackPlugins();
+            }
+            
+            // Update installation status
+            UpdateStoreInstallationStatus();
+        }
+        
+        private void LoadFallbackPlugins()
+        {
             _storePlugins.Add(new StorePluginInfo
             {
                 Name = "Atlas",
@@ -1211,9 +1240,6 @@ namespace PluginUpdater
                 Author = "arsenic2k", 
                 Category = "Utility"
             });
-
-            // Update installation status
-            UpdateStoreInstallationStatus();
         }
 
         /// <summary>

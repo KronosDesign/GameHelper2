@@ -1,0 +1,18 @@
+{
+  "plugins": [
+    {
+      "name": "Atlas",
+      "repositoryUrl": "https://github.com/arsenic2k/Atlas",
+      "description": "Advanced mapping and exploration plugin with enhanced features for Path of Exile",
+      "author": "arsenic2k",
+      "category": "Mapping"
+    },
+    {
+      "name": "Tracker",
+      "repositoryUrl": "https://github.com/arsenic2k/Tracker",
+      "description": "Comprehensive tracking system for game events and statistics",
+      "author": "arsenic2k",
+      "category": "Utility"
+    }
+  ]
+}
