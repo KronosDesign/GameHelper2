@@ -220,6 +220,11 @@ namespace GameHelper.Settings
         public bool ProcessAllRenderableEntities = false;
 
         /// <summary>
+        ///    Gets or sets a value indicating whether user wants to always rebuild projects found in Plugins folder.
+        /// </summary>
+        public bool AlwaysRebuildPlugins = false;
+
+        /// <summary>
         ///     Gets a value indicating if user is running Taiwan client or not.
         /// </summary>
         public bool IsTaiwanClient = false;

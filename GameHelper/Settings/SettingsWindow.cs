@@ -582,6 +582,9 @@ namespace GameHelper.Settings
                     }
                 }
 
+                ImGui.Checkbox("Always rebuild plugin projects on startup", ref Core.GHSettings.AlwaysRebuildPlugins);
+                ImGuiHelper.ToolTip("If enabled, on startup GameHelper will rebuild all .sln/.csproj found under each plugin folder and place the resulting DLL at the folder root (named {Folder}.dll).");
+
                 ImGui.Checkbox("Is Taiwan client", ref Core.GHSettings.IsTaiwanClient);
             }
         }
