@@ -102,20 +102,22 @@ namespace GameHelper.RemoteObjects.Components
 
             if (ImGui.TreeNode("Active Skills"))
             {
-                // Raw view (no dedupe) — show only named rows
+                // Raw view (no dedupe) — show only rows that are named AND have metrics
                 {
-                    int namedCount = 0;
+                    int visibleCount = 0;
                     for (int i = 0; i < RawSkills.Count; i++)
-                        if (!string.IsNullOrEmpty(RawSkills[i].Name))
-                            namedCount++;
-
-                    if (ImGui.TreeNode("Raw entries"))
+                        if (!string.IsNullOrEmpty(RawSkills[i].Name) &&
+                            RawSkills[i].Metrics is { Count: > 0 })
+                            visibleCount++;
+                    if (ImGui.TreeNode($"Raw entries"))
                     {
                         for (int i = 0; i < RawSkills.Count; i++)
                         {
                             var row = RawSkills[i];
-                            if (string.IsNullOrEmpty(row.Name))
-                                continue; // hide "(no name)" rows
+                            // Only show rows that have a name AND at least one metric
+                            if (string.IsNullOrEmpty(row.Name) ||
+                            row.Metrics is not { Count: > 0 })
+                                continue;
 
                             // Name is guaranteed non-empty here
                             if (ImGui.TreeNode($"{row.Name}##raw{i}"))
@@ -404,8 +406,10 @@ namespace GameHelper.RemoteObjects.Components
         }
 
         /// <summary>
-        ///     Exposes the raw (non-deduped) list of active skills but filters out unnamed rows.
-        ///     Useful for UIs that want to show every visible entry (including duplicates).
+        ///     Exposes the raw (non-deduped) list of active skills, filtered to:
+        ///     - named rows; AND
+        ///     - rows that have at least one metric from CollectSkillMetrics().
+        ///     Useful for UIs that want real, measurable entries (still includes duplicates by name).
         /// </summary>
         public IEnumerable<(int Index,
                             string Name,
@@ -413,11 +417,12 @@ namespace GameHelper.RemoteObjects.Components
                             IReadOnlyList<(string Label, decimal Value)> Metrics)>
             EnumerateRawNamedSkills()
         {
-            // Note: RawSkills may contain duplicates by Name and also unnamed rows; we skip unnamed.
+            // Note: RawSkills may contain duplicates by Name; we keep them.
             // Metrics is returned as IReadOnlyList to discourage mutation by consumers.
             foreach (var r in RawSkills)
             {
-                if (!string.IsNullOrEmpty(r.Name))
+                if (!string.IsNullOrEmpty(r.Name) &&
+                    r.Metrics is { Count: > 0 })
                     yield return (r.Index, r.Name, r.Details, r.Metrics);
             }
         }
