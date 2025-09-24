@@ -10,7 +10,7 @@ namespace GameOffsets.Objects.States.InGameState
         [FieldOffset(0x0B4)] public byte CurrentAreaLevel;
         [FieldOffset(0x0F4)] public uint CurrentAreaHash;
         // Env which are activated. Keys can be found in Environments.dat file.
-        [FieldOffset(0x968)] public StdVector Environments; // EnvironmentStruct
+        [FieldOffset(0x950)] public StdVector Environments; // EnvironmentStruct
         [FieldOffset(0x9F8)] public LocalPlayerStruct PlayerInfo;
         [FieldOffset(0xB50)] public EntityListStruct Entities;
         [FieldOffset(0xD18)] public TerrainStruct TerrainMetadata;

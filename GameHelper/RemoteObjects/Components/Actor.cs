@@ -6,6 +6,7 @@ namespace GameHelper.RemoteObjects.Components
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using GameHelper.Utils;
     using GameOffsets.Objects.Components;
     using GameOffsets.Objects.FilesStructures;
@@ -37,6 +38,16 @@ namespace GameHelper.RemoteObjects.Components
         ///     Gets the details of all known Active Skills.
         /// </summary>
         public Dictionary<string, ActiveSkillDetails> ActiveSkills { get; } = new();
+
+        /// <summary>
+        ///     Gets parsed Stats for each known active skill, keyed by skill name.
+        /// </summary>
+        public Dictionary<string, Dictionary<GameStats, int>> SkillStats { get; } = new();
+
+        /// <summary> 
+        ///     Get stats metrics of all known active Skills. 
+        /// </summary>
+        public Dictionary<string, (decimal APS, decimal DPS, decimal AVG, decimal DOTps, decimal AvgDPS, int CDms)> SkillMetrics { get; } = new();
 
         /// <summary>
         ///     Gets a value indicating if the skill can be used or not.
@@ -95,6 +106,16 @@ namespace GameHelper.RemoteObjects.Components
                 {
                     if (ImGui.TreeNode($"{skillname}"))
                     {
+                        if (this.SkillMetrics.TryGetValue(skillname, out var m))
+                        {
+                            if (m.APS > 0) ImGui.Text($"APS:     {FormatAps(m.APS)}");
+                            if (m.DPS > 0) ImGui.Text($"DPS:     {FormatValue(m.DPS)}");
+                            if (m.AVG > 0) ImGui.Text($"AvgHit:  {FormatValue(m.AVG)}");
+                            if (m.DOTps > 0) ImGui.Text($"DoT:     {FormatValue(m.DOTps)}/s");
+                            if (m.AvgDPS > 0) ImGui.Text($"AvgDPS:  {FormatValue(m.AvgDPS)}");
+                            if (m.CDms > 0) ImGui.Text($"CD:      {m.CDms} ms ({FormatSeconds(m.CDms / 1000m)}s)");
+                        }
+
                         ImGui.Text($"Use Stage: {skilldetails.UseStage}");
                         ImGui.Text($"Cast Type: {skilldetails.CastType}");
                         ImGui.Text($"Skill UnknownIdAndEquipmentInfo: {skilldetails.UnknownIdAndEquipmentInfo:X}");
@@ -176,6 +197,10 @@ namespace GameHelper.RemoteObjects.Components
                 this.ActiveSkillCooldowns[cooldowns[i].UnknownIdAndEquipmentInf0] = cooldowns[i];
             }
 
+            this.ActiveSkills.Clear();
+            this.SkillStats.Clear();
+            this.SkillMetrics.Clear();
+
             var activeSkills = reader.ReadStdVector<ActiveSkillStructure>(data.ActiveSkillsPtr);
             for (var i = 0; i < activeSkills.Length; i++)
             {
@@ -217,6 +242,14 @@ namespace GameHelper.RemoteObjects.Components
                     {
                         this.IsSkillUsable.Add(name);
                     }
+
+                    var stats = ReadSkillStats(skillDetails.StatsPtr);
+                    if (stats.Count > 0)
+                        this.SkillStats[name] = stats;
+
+                    var metrics = ComputeMetrics(stats);
+                    if (metrics.APS > 0 || metrics.DPS > 0 || metrics.AVG > 0 || metrics.DOTps > 0 || metrics.AvgDPS > 0 || metrics.CDms > 0)
+                        this.SkillMetrics[name] = metrics;
                 }
             }
 
@@ -230,6 +263,68 @@ namespace GameHelper.RemoteObjects.Components
                     this.DeployedEntities[deployedEntities[i].DeployedObjectType]++;
                 }
             }
+        }
+
+        private static Dictionary<GameStats, int> ReadSkillStats(IntPtr statsComponentPtr)
+        {
+            var dict = new Dictionary<GameStats, int>();
+            if (statsComponentPtr == IntPtr.Zero)
+                return dict;
+
+            var reader = Core.Process.Handle;
+            var sub = reader.ReadMemory<SubStatsComponentOffsets>(statsComponentPtr);
+            var pairs = reader.ReadStdVector<StatPair>(sub.Stats);
+
+            for (int i = 0; i < pairs.Length; i++)
+            {
+                var id = pairs[i].StatId;
+                var val = pairs[i].Value;
+                if (Enum.IsDefined(typeof(GameStats), id))
+                    dict[(GameStats)id] = val;
+            }
+            return dict;
+        }
+
+        private static string FormatValue(decimal value)
+        {
+            if (value > 999_999_999m) return value.ToString("0,,,.###B", CultureInfo.InvariantCulture);
+            if (value > 999_999m) return value.ToString("0,,.##M", CultureInfo.InvariantCulture);
+            if (value > 999m) return value.ToString("0,.##K", CultureInfo.InvariantCulture);
+            return value.ToString("0.#", CultureInfo.InvariantCulture);
+        }
+
+        private static string FormatAps(decimal aps) => aps.ToString("0.##", CultureInfo.InvariantCulture);
+        private static string FormatSeconds(decimal sec) => sec.ToString("0.###", CultureInfo.InvariantCulture);
+
+        private static (decimal APS, decimal DPS, decimal AVG, decimal DOTps, decimal AvgDPS, int CDms)
+            ComputeMetrics(Dictionary<GameStats, int> stats)
+        {
+            if (stats == null || stats.Count == 0) return (0, 0, 0, 0, 0, 0);
+
+            decimal aps = 0, statDps = 0, avgHit = 0, dotps = 0;
+            int cdms = 0;
+
+            if (stats.TryGetValue(GameStats.hundred_times_attacks_per_second, out var aps100))
+                aps = aps100 / 100m;
+
+            if (stats.TryGetValue(GameStats.hundred_times_damage_per_second, out var dps100))
+                statDps = dps100 / 100m;
+
+            if (stats.TryGetValue(GameStats.hundred_times_average_damage_per_skill_use, out var avg100))
+                avgHit = avg100 / 100m;
+
+            if (stats.TryGetValue(GameStats.base_skill_show_average_damage_instead_of_dps, out var baseAvg100))
+                if (baseAvg100 > 0) avgHit = Math.Max(avgHit, baseAvg100 / 100m);
+
+            if (stats.TryGetValue(GameStats.intermediary_fire_skill_dot_damage_to_deal_per_minute, out var dotPerMin))
+                dotps = dotPerMin / 60m;
+
+            if (stats.TryGetValue(GameStats.display_skill_cooldown_time_ms, out var cd))
+                cdms = cd;
+
+            var avgDps = (aps > 0 && avgHit > 0) ? aps * avgHit : 0;
+
+            return (aps, statDps, avgHit, dotps, avgDps, cdms);
         }
     }
 }

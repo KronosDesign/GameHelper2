@@ -46,9 +46,22 @@ namespace GameOffsets.Objects.Components
         [FieldOffset(0xA8)] public int TotalCooldownTimeInMs;
         //[FieldOffset(0x9C)] public int SoulsPerUse;
         //[FieldOffset(0xA0)] public int TotalVaalUses;
-        //[FieldOffset(0xB0)] public IntPtr StatsPtr;
+        [FieldOffset(0xC8)] public IntPtr StatsPtr;
         //[FieldOffset(0xB8)] public IntPtr UselessPtr3;
         //[FieldOffset(0xD8)] public StdVector LinkedSupportedGems; // according to poe.exe each support gem structure size is 0x80
+    }
+
+    [StructLayout(LayoutKind.Explicit, Pack = 1)]
+    public struct SubStatsComponentOffsets
+    {
+        [FieldOffset(0xF8)] public StdVector Stats;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct StatPair
+    {
+        public int StatId;
+        public int Value;
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
