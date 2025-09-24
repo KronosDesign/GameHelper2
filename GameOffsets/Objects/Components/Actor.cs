@@ -22,6 +22,13 @@ namespace GameOffsets.Objects.Components
         public IntPtr UselessPtr0;
     }
 
+    // Some clients store a plain vector<void*> at 0xAB8 (8-byte elements).
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct ActiveSkillPtrOnly
+    {
+        public IntPtr ActiveSkillPtr;
+    }
+
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
     public struct ActiveSkillDetails // based on heuristics this structure size is 0x100
     {
