@@ -242,6 +242,8 @@ namespace GameHelper.RemoteObjects.Components
             this.Animation = data.AnimationId;
             this.IsSkillUsable.Clear();
 
+            // Rebuild cooldowns fresh every tick to avoid stale entries.
+            this.ActiveSkillCooldowns.Clear();
             var cooldowns = reader.ReadStdVector<ActiveSkillCooldown>(data.CooldownsPtr);
             for (var i = 0; i < cooldowns.Length; i++)
             {
