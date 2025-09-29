@@ -1,7 +1,6 @@
-﻿namespace GameHelper.RemoteObjects.UiElement
+namespace GameHelper.RemoteObjects.UiElement
 {
     using GameHelper.Cache;
-    using ImGuiNET;
     using System;
 
     /// <summary>
@@ -19,13 +18,6 @@
 
         public bool IsChatActive => this.backgroundColor.W * 255 >= 0x8C;
 
-        /// <summary>
-        ///     Converts the <see cref="ChatParentUiElement" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"IsChatActive: {this.IsChatActive} ({this.backgroundColor.W * 255})");
-        }
+        // Rendering is handled by a provider.
     }
 }

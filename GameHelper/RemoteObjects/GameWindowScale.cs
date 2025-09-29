@@ -1,4 +1,4 @@
-﻿// <copyright file="GameWindowScale.cs" company="None">
+// <copyright file="GameWindowScale.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -9,7 +9,6 @@ namespace GameHelper.RemoteObjects
     using Coroutine;
     using CoroutineEvents;
     using GameOffsets.Objects.UiElement;
-    using ImGuiNET;
 
     /// <summary>
     ///     Initially this class reads the game window scale value from the game.
@@ -65,16 +64,7 @@ namespace GameHelper.RemoteObjects
             return (widthScale, heightScale);
         }
 
-        /// <summary>
-        ///     Converts the <see cref="GameWindowScale" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Index 1: width, height {this.GetScaleValue(1, 1)} ratio");
-            ImGui.Text($"Index 2: width, height {this.GetScaleValue(2, 1)} ratio");
-            ImGui.Text($"Index 3: width, height {this.GetScaleValue(3, 1)} ratio");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

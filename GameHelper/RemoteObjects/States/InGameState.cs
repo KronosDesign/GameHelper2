@@ -1,4 +1,4 @@
-﻿// <copyright file="InGameState.cs" company="None">
+// <copyright file="InGameState.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -45,12 +45,7 @@ namespace GameHelper.RemoteObjects.States
         /// </summary>
         public ImportantUiElements GameUi { get; } = new(IntPtr.Zero);
 
-        /// <inheritdoc />
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGuiHelper.IntPtrToImGui("UiRoot", this.uiRootAddress);
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

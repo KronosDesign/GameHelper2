@@ -1,4 +1,4 @@
-﻿// <copyright file="SkillTreeNodeUiElement.cs" company="None">
+// <copyright file="SkillTreeNodeUiElement.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -7,7 +7,6 @@ namespace GameHelper.RemoteObjects.UiElement
     using System;
     using GameHelper.Cache;
     using GameOffsets.Objects.UiElement;
-    using ImGuiNET;
 
     /// <summary>
     ///     Points to the Map UiElement.
@@ -27,14 +26,7 @@ namespace GameHelper.RemoteObjects.UiElement
         /// </summary>
         public int SkillGraphId { get; private set; } = 0x00;
 
-        /// <summary>
-        ///     Converts the <see cref="LargeMapUiElement" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"SkillGraphId = {this.SkillGraphId}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

@@ -1,11 +1,10 @@
-﻿// <copyright file="TerrainHeightHelper.cs" company="None">
+// <copyright file="TerrainHeightHelper.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
 namespace GameHelper.RemoteObjects
 {
     using System;
-    using ImGuiNET;
 
     /// <summary>
     ///     Contains the static data for calculating the terrain height.
@@ -28,12 +27,7 @@ namespace GameHelper.RemoteObjects
         /// </summary>
         public byte[] Values { get; private set; }
 
-        /// <inheritdoc />
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text(string.Join(' ', this.Values));
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

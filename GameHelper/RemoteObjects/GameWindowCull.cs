@@ -1,4 +1,4 @@
-﻿// <copyright file="GameWindowCull.cs" company="None">
+// <copyright file="GameWindowCull.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,6 @@ namespace GameHelper.RemoteObjects
     using System.Collections.Generic;
     using Coroutine;
     using CoroutineEvents;
-    using ImGuiNET;
 
     /// <summary>
     ///     Reads the Game Window Cull (black bar on each side) values from the game.
@@ -32,14 +31,7 @@ namespace GameHelper.RemoteObjects
         /// </summary>
         public int Value { get; private set; }
 
-        /// <summary>
-        ///     Converts the <see cref="GameWindowCull" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Game Window Cull Size: {this.Value}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

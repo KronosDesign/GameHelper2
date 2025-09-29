@@ -1,4 +1,4 @@
-﻿// <copyright file="Core.cs" company="None">
+// <copyright file="Core.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -13,10 +13,11 @@ namespace GameHelper
     using GameHelper.Cache;
     using ImGuiNET;
     using RemoteObjects;
+    using GameHelper.Rendering;
     using Settings;
     using Utils;
 
-    /// <summary>
+        /// <summary>
     ///     Main Class that depends on the GameProcess Events
     ///     and updates the RemoteObjects. It also manages the
     ///     GameHelper settings.
@@ -57,6 +58,11 @@ namespace GameHelper
         ///     Gets the GameHelper settings.
         /// </summary>
         public static State GHSettings { get; } = JsonHelper.CreateOrLoadJsonFile<State>(State.CoreSettingFile);
+
+        /// <summary>
+        ///     Central registry of render providers.
+        /// </summary>
+        internal static RenderLibrary Renderers { get; } = new();
 
         /// <summary>
         ///     Gets the cache for all the GGPK data with value type string.
@@ -119,6 +125,9 @@ namespace GameHelper
                 Console.WriteLine($"Failed to read GameHelper version: {ex.Message}.");
                 version = "Dev";
             }
+
+            // Initialize render providers
+            RendererScanner.ScanAndRegister(Renderers, Assembly.GetExecutingAssembly());
         }
 
         /// <summary>
@@ -158,11 +167,24 @@ namespace GameHelper
         internal static void RemoteObjectsToImGuiCollapsingHeader()
         {
             const BindingFlags propertyFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static;
-            foreach (var property in RemoteObjectBase.GetToImGuiMethods(typeof(Core), propertyFlags, null))
+            var properties = typeof(Core).GetProperties(propertyFlags);
+            for (var i = 0; i < properties.Length; i++)
             {
-                if (ImGui.CollapsingHeader(property.Name))
+                var prop = properties[i];
+                if (!typeof(RemoteObjectBase).IsAssignableFrom(prop.PropertyType))
                 {
-                    property.ToImGui.Invoke(property.Value, null);
+                    continue;
+                }
+
+                var value = prop.GetValue(null);
+                if (value == null)
+                {
+                    continue;
+                }
+
+                if (ImGui.CollapsingHeader(prop.Name))
+                {
+                    Renderers.Render(value);
                 }
             }
         }

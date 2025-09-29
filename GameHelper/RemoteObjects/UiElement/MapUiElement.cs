@@ -1,4 +1,4 @@
-﻿// <copyright file="MiniMapUiElement.cs" company="None">
+// <copyright file="MiniMapUiElement.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,6 @@ namespace GameHelper.RemoteObjects.UiElement
     using System.Numerics;
     using GameHelper.Cache;
     using GameOffsets.Objects.UiElement;
-    using ImGuiNET;
 
     /// <summary>
     ///     Points to the Map UiElement.
@@ -42,16 +41,7 @@ namespace GameHelper.RemoteObjects.UiElement
         /// </summary>
         public float Zoom { get; private set; } = 0.5f;
 
-        /// <summary>
-        ///     Converts the <see cref="LargeMapUiElement" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Shift {this.shift}");
-            ImGui.Text($"Default Shift {this.defaultShift}");
-            ImGui.Text($"Zoom {this.Zoom}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

@@ -1,4 +1,4 @@
-﻿// <copyright file="AreaChangeCounter.cs" company="None">
+// <copyright file="AreaChangeCounter.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -9,7 +9,6 @@ namespace GameHelper.RemoteObjects
     using Coroutine;
     using CoroutineEvents;
     using GameOffsets.Objects;
-    using ImGuiNET;
 
     /// <summary>
     ///     Points to the AreaChangeCounter object and read/cache it's value
@@ -32,14 +31,7 @@ namespace GameHelper.RemoteObjects
         /// </summary>
         public int Value { get; private set; } = int.MaxValue;
 
-        /// <summary>
-        ///     Converts the <see cref="AreaChangeCounter" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Area Change Counter: {this.Value}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

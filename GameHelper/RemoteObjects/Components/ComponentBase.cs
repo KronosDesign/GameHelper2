@@ -1,4 +1,4 @@
-﻿// <copyright file="ComponentBase.cs" company="None">
+// <copyright file="ComponentBase.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -38,12 +38,7 @@ namespace GameHelper.RemoteObjects.Components
             throw new Exception("Component Address should never be Zero.");
         }
 
-        /// <inheritdoc />
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGuiHelper.IntPtrToImGui("Owner Address", this.OwnerEntityAddress);
-        }
+        // Rendering is handled by providers.
 
         /// <inheritdoc />
         protected override void UpdateData(bool hasAddressChanged)

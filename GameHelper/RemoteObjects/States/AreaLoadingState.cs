@@ -1,4 +1,4 @@
-﻿// <copyright file="AreaLoadingState.cs" company="None">
+// <copyright file="AreaLoadingState.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -9,7 +9,6 @@ namespace GameHelper.RemoteObjects.States
     using Coroutine;
     using CoroutineEvents;
     using GameOffsets.Objects.States;
-    using ImGuiNET;
 
     /// <summary>
     ///     Reads AreaLoadingState Game Object.
@@ -38,16 +37,7 @@ namespace GameHelper.RemoteObjects.States
         /// </summary>
         internal bool IsLoading { get; private set; }
 
-        /// <summary>
-        ///     Converts the <see cref="AreaLoadingState" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Current Area Name: {this.CurrentAreaName}");
-            ImGui.Text($"Is Loading Screen: {this.IsLoading}");
-            ImGui.Text($"Total Loading Time(ms): {this.lastCache.TotalLoadingScreenTimeMs}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void CleanUpData()

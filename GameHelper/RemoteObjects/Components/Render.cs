@@ -1,4 +1,4 @@
-﻿// <copyright file="Render.cs" company="None">
+// <copyright file="Render.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,6 @@ namespace GameHelper.RemoteObjects.Components
     using GameOffsets.Natives;
     using GameOffsets.Objects.Components;
     using GameOffsets.Objects.States.InGameState;
-    using ImGuiNET;
 
     /// <summary>
     ///     The <see cref="Render" /> component in the entity.
@@ -52,17 +51,7 @@ namespace GameHelper.RemoteObjects.Components
         /// </summary>
         public float TerrainHeight { get; private set; }
 
-        /// <summary>
-        ///     Converts the <see cref="Render" /> class data to ImGui.
-        /// </summary>
-        internal override void ToImGui()
-        {
-            base.ToImGui();
-            ImGui.Text($"Grid Position: {this.gridPos2D}");
-            ImGui.Text($"World Position: {this.WorldPosition}");
-            ImGui.Text($"Terrain Height (Z-Axis): {this.TerrainHeight}");
-            ImGui.Text($"Model Bounds: {this.ModelBounds}");
-        }
+        // Rendering is handled by a provider.
 
         /// <inheritdoc />
         protected override void UpdateData(bool hasAddressChanged)
